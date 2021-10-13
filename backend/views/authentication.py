@@ -20,12 +20,24 @@ class UserSchema(ma.Schema):
     class Meta:
         fields = ('name', 'email', 'phone', 'password')
 
+
 user_schema = UserSchema()
+
+
+def are_all_args_present(*args):
+    for a in args:
+        if a is None:
+            return False
+    return True
+
 
 @authentication.route('/login', methods=['POST'])
 def login_user():
     email = request.json.get('email')
     password = request.json.get('password')
+
+    if not are_all_args_present(email, password):
+        return {'success': False, 'error': 'Please provide all the arguments'}
 
     user = session.query(User).filter(User.email == email).first()
     if not user:
@@ -36,8 +48,8 @@ def login_user():
         expiry_limit = datetime.now() + timedelta(hours=1)
         encoded_token = jwt.encode(
             {"id": user.id, 'exp': expiry_limit}, SECRET_KEY, algorithm='HS256')
-        return { 'success': True, 'name': user.name, 'token': encoded_token }
-    return { 'success': False, 'error': 'Passwords does not match' }
+        return {'success': True, 'name': user.name, 'token': encoded_token}
+    return {'success': False, 'error': 'Passwords does not match'}
 
 
 @authentication.route('/register', methods=['PUT'])
@@ -46,6 +58,9 @@ def create_new_user():
     email = request.json.get('email')
     phone = request.json.get('phone')
     password = request.json.get('password')
+
+    if not are_all_args_present(name, email, phone, password):
+        return {'success': False, 'error': 'Please provide all the arguments'}
 
     is_user_present = session.query(User).filter(User.email == email).first()
     if is_user_present:
