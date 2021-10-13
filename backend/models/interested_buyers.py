@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, Date, ForeignKey
 from sqlalchemy.orm import relationship
-from . import Base
+from models import Base
 from datetime import date
 
 class InterestedBuyer(Base):
