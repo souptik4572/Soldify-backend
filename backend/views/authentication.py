@@ -15,7 +15,6 @@ BCRYPT_SALT = int(config('BCRYPT_SALT'))
 authentication = Blueprint('authentication', __name__)
 ma = Marshmallow(authentication)
 
-
 class UserSchema(ma.Schema):
     class Meta:
         fields = ('name', 'email', 'phone', 'password')
