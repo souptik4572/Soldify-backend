@@ -1,4 +1,4 @@
-from flask import Blueprint, Request, request
+from flask import Blueprint, request
 from backend.models import Session
 from backend.models.user import User
 from decouple import config
