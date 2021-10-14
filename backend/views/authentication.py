@@ -36,19 +36,19 @@ def login_user():
     password = request.json.get('password')
 
     if not are_all_args_present(email, password):
-        return {'success': False, 'error': 'Please provide all the arguments'}
+        return {'success': False, 'error': 'Please provide all the arguments'}, 404
 
     user = session.query(User).filter(User.email == email).first()
     if not user:
-        return {'success': False, 'error': 'User with email id does not exist'}
+        return {'success': False, 'error': 'User with email id does not exist'}, 404
     is_password_matching = bcrypt.checkpw(
         password.encode('utf-8'), user.password.encode('utf-8'))
     if is_password_matching:
-        expiry_limit = datetime.now() + timedelta(hours=1)
+        expiry_limit = datetime.now() + timedelta(days=1)
         encoded_token = jwt.encode(
             {"id": user.id, 'exp': expiry_limit}, SECRET_KEY, algorithm='HS256')
-        return {'success': True, 'name': user.name, 'token': encoded_token}
-    return {'success': False, 'error': 'Passwords does not match'}
+        return {'success': True, 'name': user.name, 'token': encoded_token}, 200
+    return {'success': False, 'error': 'Passwords does not match'}, 404
 
 
 @authentication.route('/register', methods=['PUT'])
@@ -59,17 +59,17 @@ def create_new_user():
     password = request.json.get('password')
 
     if not are_all_args_present(name, email, phone, password):
-        return {'success': False, 'error': 'Please provide all the arguments'}
+        return {'success': False, 'error': 'Please provide all the arguments'}, 404
 
     is_user_present = session.query(User).filter(User.email == email).first()
     if is_user_present:
-        return {'success': False, 'error': 'Email already in use'}
+        return {'success': False, 'error': 'Email already in use'}, 404
     hashed_password = str(bcrypt.hashpw(password.encode(
         'utf-8'), bcrypt.gensalt(BCRYPT_SALT))).replace("b'", "").replace("'", "")
     new_user = User(name, email, phone, hashed_password)
     try:
         session.add(new_user)
         session.commit()
-        return {'success': True, 'user': user_schema.dump(new_user)}
+        return {'success': True, 'user': user_schema.dump(new_user)}, 201
     except:
-        return {'success': False, 'error': "New user not created"}
+        return {'success': False, 'error': "New user not created"}, 404

@@ -4,13 +4,10 @@ from backend.models import Session
 from backend.models.user import User
 from backend.models.product import Product
 from backend.models.product_image import ProductImage
-from decouple import config
-import jwt
 from flask_marshmallow import Marshmallow
+from backend.middleware import get_logged_user_id
 
 session = Session()
-
-SECRET_KEY = config('ACCESS_SECRET_TOKEN')
 
 product = Blueprint('product', __name__)
 ma = Marshmallow(product)
@@ -26,7 +23,7 @@ products_schema = ProductSchema(many=True)
 
 
 def populate_images(value):
-    result = {}
+    result = { 'success': True }
     if isinstance(value, list):
         result['products'] = products_schema.dump(value)
         for i in range(len(value)):
@@ -41,32 +38,19 @@ def populate_images(value):
     return result
 
 
-def get_logged_user_id(token):
-    try:
-        user = jwt.decode(token.split(
-            ' ')[1], SECRET_KEY, algorithms=['HS256'])
-        if not user['id']:
-            return None, 'Token is invalid'
-        return user['id'], 'Token is valid'
-    except jwt.ExpiredSignatureError:
-        return None, 'Token has expired, please login again'
-    except:
-        return None, 'Token is invalid'
-
-
 @product.route('/<int:product_id>', methods=['PATCH'])
 def edit_particular_product(product_id):
     logged_in_id, message = get_logged_user_id(
         request.headers.get('Authorization'))
     if not logged_in_id:
-        return {'success': False, 'error': message}
+        return {'success': False, 'error': message}, 404
     try:
         particular_product = session.query(Product).join(
             ProductImage).filter(Product.id == product_id).first()
         if not particular_product:
-            return {'success': True, 'error': 'Product does not exist'}
+            return {'success': False, 'error': 'Product does not exist'}, 404
         if logged_in_id != particular_product.user_id:
-            return {'success': False, 'error': 'You are not authorized to edit this product'}
+            return {'success': False, 'error': 'You are not authorized to edit this product'}, 404
         category = request.json.get('category')
         title = request.json.get('title')
         price = request.json.get('price')
@@ -84,9 +68,9 @@ def edit_particular_product(product_id):
         if created_on:
             particular_product.created_on = created_on
         session.commit()
-        return populate_images(particular_product)
+        return populate_images(particular_product), 201
     except Exception as e:
-        return {'success': False, 'error': 'Encountered error while editing particular product'}
+        return {'success': False, 'error': 'Encountered error while editing particular product'}, 404
 
 
 @product.route('/<int:product_id>', methods=['DELETE'])
@@ -94,19 +78,19 @@ def delete_particular_product(product_id):
     logged_in_id, message = get_logged_user_id(
         request.headers.get('Authorization'))
     if not logged_in_id:
-        return {'success': False, 'error': message}
+        return {'success': False, 'error': message}, 404
     try:
         particular_product = session.query(Product).join(
             ProductImage).filter(Product.id == product_id).first()
         if not particular_product:
-            return {'success': True, 'error': 'Product does not exist'}
+            return {'success': False, 'error': 'Product does not exist'}, 404
         if logged_in_id != particular_product.user_id:
-            return {'success': False, 'error': 'You are not authorized to delete this product'}
+            return {'success': False, 'error': 'You are not authorized to delete this product'}, 404
         session.delete(particular_product)
         session.commit()
-        return populate_images(particular_product)
+        return { 'success': True }, 201
     except Exception as e:
-        return {'success': False, 'error': 'Encountered error while deleting particular product'}
+        return {'success': False, 'error': 'Encountered error while deleting particular product'}, 404
 
 
 @product.route('/<int:product_id>', methods=['GET'])
@@ -114,15 +98,15 @@ def get_particular_product(product_id):
     logged_in_id, message = get_logged_user_id(
         request.headers.get('Authorization'))
     if not logged_in_id:
-        return {'success': False, 'error': message}
+        return {'success': False, 'error': message}, 404
     try:
         particular_product = session.query(Product).join(
             ProductImage).filter(Product.id == product_id).first()
         if not particular_product:
-            return {'success': True, 'error': 'Product does not exist'}
-        return populate_images(particular_product)
+            return {'success': False, 'error': 'Product does not exist'}, 404
+        return populate_images(particular_product), 200
     except Exception as e:
-        return {'success': False, 'error': 'Encountered error while fetching particular product'}
+        return {'success': False, 'error': 'Encountered error while fetching particular product'}, 404
 
 
 @product.route('', methods=['GET'])
@@ -130,18 +114,16 @@ def get_all_products():
     logged_in_id, message = get_logged_user_id(
         request.headers.get('Authorization'))
     if not logged_in_id:
-        return {'success': False, 'error': message}
+        return {'success': False, 'error': message}, 404
     try:
         products = session.query(Product).filter(
             Product.user_id == logged_in_id).all()
         if not products:
-            return {'success': True, 'error': 'Products does not exist'}
+            return {'success': False, 'error': 'Products does not exist'}, 404
         result = populate_images(products)
-        result['success'] = True
-        return result
+        return result, 200
     except Exception as e:
-        print(e)
-        return {'success': False, 'error': 'Encountered error while creating new product'}
+        return {'success': False, 'error': 'Encountered error while creating new product'}, 404
 
 
 @product.route('', methods=['PUT'])
@@ -154,11 +136,11 @@ def create_new_product():
     logged_in_id, message = get_logged_user_id(
         request.headers.get('Authorization'))
     if not logged_in_id:
-        return {'success': False, 'error': message}
+        return {'success': False, 'error': message}, 404
     try:
         user = session.query(User).filter(User.id == logged_in_id).first()
         if not user:
-            return {'success': False, 'error': 'User does not exist'}
+            return {'success': False, 'error': 'User does not exist'}, 404
         new_product = Product(category, title, price, description, user)
         session.add(new_product)
         for image_link in images:
@@ -166,5 +148,5 @@ def create_new_product():
             session.add(new_product_image)
         session.commit()
     except Exception as e:
-        return {'success': False, 'error': 'Encountered error while creating new product'}
-    return {'success': True}
+        return {'success': False, 'error': 'Encountered error while creating new product'}, 404
+    return {'success': True}, 201
