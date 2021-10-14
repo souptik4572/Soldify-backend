@@ -15,12 +15,15 @@ SECRET_KEY = config('ACCESS_SECRET_TOKEN')
 product = Blueprint('product', __name__)
 ma = Marshmallow(product)
 
+
 class ProductSchema(ma.Schema):
     class Meta:
         fields = ('category', 'title', 'price', 'description', 'created_on')
 
+
 product_schema = ProductSchema()
 products_schema = ProductSchema(many=True)
+
 
 def populate_images(value):
     result = {}
@@ -37,9 +40,11 @@ def populate_images(value):
         result['product']['images'].append(image.link)
     return result
 
+
 def get_logged_user_id(token):
     try:
-        user = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        user = jwt.decode(token.split(
+            ' ')[1], SECRET_KEY, algorithms=['HS256'])
         if not user['id']:
             return None, 'Token is invalid'
         return user['id'], 'Token is valid'
@@ -49,14 +54,88 @@ def get_logged_user_id(token):
         return None, 'Token is invalid'
 
 
-@product.route('', methods=['GET'])
-def get_all_products():
+@product.route('/<int:product_id>', methods=['PATCH'])
+def edit_particular_product(product_id):
     logged_in_id, message = get_logged_user_id(
-        request.headers.get('Authorization').split(' ')[1])
+        request.headers.get('Authorization'))
     if not logged_in_id:
         return {'success': False, 'error': message}
     try:
-        products = session.query(Product).filter(Product.user_id == logged_in_id).all()
+        particular_product = session.query(Product).join(
+            ProductImage).filter(Product.id == product_id).first()
+        if not particular_product:
+            return {'success': True, 'error': 'Product does not exist'}
+        if logged_in_id != particular_product.user_id:
+            return {'success': False, 'error': 'You are not authorized to edit this product'}
+        category = request.json.get('category')
+        title = request.json.get('title')
+        price = request.json.get('price')
+        description = request.json.get('description')
+        created_on = request.json.get('created_on')
+        print(category, title, price, description)
+        if category:
+            particular_product.category = category
+        if title:
+            particular_product.title = title
+        if price:
+            particular_product.price = price
+        if description:
+            particular_product.description = description
+        if created_on:
+            particular_product.created_on = created_on
+        session.commit()
+        return populate_images(particular_product)
+    except Exception as e:
+        return {'success': False, 'error': 'Encountered error while editing particular product'}
+
+
+@product.route('/<int:product_id>', methods=['DELETE'])
+def delete_particular_product(product_id):
+    logged_in_id, message = get_logged_user_id(
+        request.headers.get('Authorization'))
+    if not logged_in_id:
+        return {'success': False, 'error': message}
+    try:
+        particular_product = session.query(Product).join(
+            ProductImage).filter(Product.id == product_id).first()
+        if not particular_product:
+            return {'success': True, 'error': 'Product does not exist'}
+        if logged_in_id != particular_product.user_id:
+            return {'success': False, 'error': 'You are not authorized to delete this product'}
+        session.delete(particular_product)
+        session.commit()
+        return populate_images(particular_product)
+    except Exception as e:
+        return {'success': False, 'error': 'Encountered error while deleting particular product'}
+
+
+@product.route('/<int:product_id>', methods=['GET'])
+def get_particular_product(product_id):
+    logged_in_id, message = get_logged_user_id(
+        request.headers.get('Authorization'))
+    if not logged_in_id:
+        return {'success': False, 'error': message}
+    try:
+        particular_product = session.query(Product).join(
+            ProductImage).filter(Product.id == product_id).first()
+        if not particular_product:
+            return {'success': True, 'error': 'Product does not exist'}
+        return populate_images(particular_product)
+    except Exception as e:
+        return {'success': False, 'error': 'Encountered error while fetching particular product'}
+
+
+@product.route('', methods=['GET'])
+def get_all_products():
+    logged_in_id, message = get_logged_user_id(
+        request.headers.get('Authorization'))
+    if not logged_in_id:
+        return {'success': False, 'error': message}
+    try:
+        products = session.query(Product).filter(
+            Product.user_id == logged_in_id).all()
+        if not products:
+            return {'success': True, 'error': 'Products does not exist'}
         result = populate_images(products)
         result['success'] = True
         return result
@@ -73,11 +152,13 @@ def create_new_product():
     description = request.json.get('description')
     images = request.json.get('images')
     logged_in_id, message = get_logged_user_id(
-        request.headers.get('Authorization').split(' ')[1])
+        request.headers.get('Authorization'))
     if not logged_in_id:
         return {'success': False, 'error': message}
     try:
         user = session.query(User).filter(User.id == logged_in_id).first()
+        if not user:
+            return {'success': False, 'error': 'User does not exist'}
         new_product = Product(category, title, price, description, user)
         session.add(new_product)
         for image_link in images:
@@ -85,10 +166,5 @@ def create_new_product():
             session.add(new_product_image)
         session.commit()
     except Exception as e:
-        print(e)
         return {'success': False, 'error': 'Encountered error while creating new product'}
-    product = session.query(Product).join(
-        ProductImage).filter(Product.id == new_product.id).first()
-    result = populate_images(product)
-    result['success'] = True
-    return result
+    return {'success': True}

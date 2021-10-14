@@ -1,7 +1,8 @@
 from sqlalchemy import Column, Integer, Date, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from models import Base
 from datetime import date
+
 
 class SoldItem(Base):
     __tablename__ = 'sold_items'
@@ -10,15 +11,17 @@ class SoldItem(Base):
 
     # Creating foreign key to users table
     seller_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    seller = relationship('User', backref='sold_item')
+    seller = relationship('User', backref=backref(
+        'sold_item', cascade="all, delete-orphan"))
 
     # Creating foreign key to users table
     buyer_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    buyer = relationship('User', backref='sold_item')
+    buyer = relationship('User', backref=backref(
+        'sold_item', cascade="all, delete-orphan"))
 
     # Creating foreign key to products table
     product_id = Column(Integer, ForeignKey('products.id'), nullable=False)
-    product = relationship('Product', backref='sold_item')
+    product = relationship('Product', backref=backref('sold_item', cascade="all, delete-orphan"))
 
     def __init__(self, seller, buyer):
         self.seller = seller

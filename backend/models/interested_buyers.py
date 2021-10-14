@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, Date, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from models import Base
 from datetime import date
 
@@ -10,11 +10,11 @@ class InterestedBuyer(Base):
 
     # Creating foreign key to users table
     seller_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    seller = relationship('User', backref='interested_buyer')
+    seller = relationship('User', backref=backref('interested_buyer', cascade="all, delete-orphan"))
 
     # Creating foreign key to users table
     buyer_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    buyer = relationship('User', backref='interested_buyer')
+    buyer = relationship('User', backref=backref('interested_buyer', cascade="all, delete-orphan"))
 
     def __init__(self, seller, buyer):
         self.seller = seller
