@@ -1,12 +1,13 @@
 from flask import Blueprint, request
-from backend.models import Session
-from backend.models.user import User
+from ..models import Session
+from ..models.user import User
 from decouple import config
 import jwt
 import bcrypt
 from flask_marshmallow import Marshmallow
 from datetime import datetime, timedelta
-from backend.middleware import get_logged_user_id
+from ..middleware import get_logged_user_id
+from ..utils.check_args import are_all_args_present
 
 session = Session()
 
@@ -22,13 +23,6 @@ class UserSchema(ma.Schema):
 
 
 user_schema = UserSchema()
-
-
-def are_all_args_present(*args):
-    for a in args:
-        if a is None:
-            return False
-    return True
 
 @authentication.route('/edit', methods=['PATCH'])
 def edit_user_date():
