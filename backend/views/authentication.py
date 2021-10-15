@@ -39,21 +39,20 @@ def edit_user_date():
     name = request.json.get('name')
     email = request.json.get('email')
     phone = request.json.get('phone')
-
-    user = session.query(User).filter(User.id == logged_in_id).first()
-    if not user:
-        return {'success': False, 'error': 'User with given id does not exist'}, 404
-    if name:
-        user.name = name
-    if email:
-        user.email = email
-    if phone:
-        user.phone = phone
     try:
+        user = session.query(User).filter(User.id == logged_in_id).first()
+        if not user:
+            return {'success': False, 'error': 'User with given id does not exist'}, 404
+        if name:
+            user.name = name
+        if email:
+            user.email = email
+        if phone:
+            user.phone = phone
         session.commit()
         return {'success': True, 'user': user_schema.dump(user)}, 201
-    except:
-        return {'success': False, 'error': "New user not created"}, 404
+    except Exception as e:
+        return {'success': False, 'error': str(e)}, 404
 
 @authentication.route('/delete', methods=['DELETE'])
 def delete_existing_user():
@@ -68,8 +67,8 @@ def delete_existing_user():
         session.delete(user)
         session.commit()
         return {'success': True, 'user': user_schema.dump(user)}, 201
-    except:
-        return {'success': False, 'error': "New user not created"}, 404
+    except Exception as e:
+        return {'success': False, 'error': str(e)}, 404
     
 
 @authentication.route('/login', methods=['POST'])
@@ -113,5 +112,5 @@ def create_new_user():
         session.add(new_user)
         session.commit()
         return {'success': True, 'user': user_schema.dump(new_user)}, 201
-    except:
-        return {'success': False, 'error': "New user not created"}, 404
+    except Exception as e:
+        return {'success': False, 'error': str(e)}, 404

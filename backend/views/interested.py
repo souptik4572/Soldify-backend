@@ -55,10 +55,13 @@ def add_interested_buyer(product_id):
     buyer = session.query(User).filter(User.id == logged_in_id).first()
     if not buyer:
         return {'success': False, 'error': 'Buyer with given id does not exist'}, 404
-    new_interested_buyer = InterestedBuyer(product, buyer)
-    session.add(new_interested_buyer)
-    session.commit()
-    return {'success': True}, 201
+    try:
+        new_interested_buyer = InterestedBuyer(product, buyer)
+        session.add(new_interested_buyer)
+        session.commit()
+        return {'success': True}, 201
+    except Exception as e:
+        return { 'success': False, 'error': str(e) }
 
 @interested.route('/remove', methods=['DELETE'])
 def remove_interested_buyer(product_id):
@@ -69,6 +72,9 @@ def remove_interested_buyer(product_id):
     interested_buyer = session.query(InterestedBuyer).filter(InterestedBuyer.buyer_id == logged_in_id).first()
     if not interested_buyer:
         return { 'success': False, 'error': 'Logged in user is not a buyer for this product' }, 404
-    session.delete(interested_buyer)
-    session.commit()
-    return { 'success': True }, 201
+    try:
+        session.delete(interested_buyer)
+        session.commit()
+        return { 'success': True }, 201
+    except Exception as e:
+        return { 'success': False, 'error': str(e) }
