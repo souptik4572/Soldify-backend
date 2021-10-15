@@ -46,6 +46,7 @@ def edit_user_date():
         session.commit()
         return {'success': True, 'user': user_schema.dump(user)}, 201
     except Exception as e:
+        session.rollback()
         return {'success': False, 'error': str(e)}, 404
 
 @authentication.route('/delete', methods=['DELETE'])
