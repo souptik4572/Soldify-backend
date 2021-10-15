@@ -6,6 +6,7 @@ import jwt
 import bcrypt
 from flask_marshmallow import Marshmallow
 from datetime import datetime, timedelta
+from backend.middleware import get_logged_user_id
 
 session = Session()
 
@@ -29,13 +30,17 @@ def are_all_args_present(*args):
             return False
     return True
 
-@authentication.route('/<int:user_id>', methods=['PATCH'])
-def edit_user_date(user_id):
+@authentication.route('/edit', methods=['PATCH'])
+def edit_user_date():
+    logged_in_id, message = get_logged_user_id(
+        request.headers.get('Authorization'))
+    if not logged_in_id:
+        return {'success': False, 'error': message}, 404
     name = request.json.get('name')
     email = request.json.get('email')
     phone = request.json.get('phone')
 
-    user = session.query(User).filter(User.id == user_id).first()
+    user = session.query(User).filter(User.id == logged_in_id).first()
     if not user:
         return {'success': False, 'error': 'User with given id does not exist'}, 404
     if name:
@@ -50,9 +55,13 @@ def edit_user_date(user_id):
     except:
         return {'success': False, 'error': "New user not created"}, 404
 
-@authentication.route('/<int:user_id>', methods=['DELETE'])
-def delete_existing_user(user_id):
-    user = session.query(User).filter(User.id == user_id).first()
+@authentication.route('/delete', methods=['DELETE'])
+def delete_existing_user():
+    logged_in_id, message = get_logged_user_id(
+        request.headers.get('Authorization'))
+    if not logged_in_id:
+        return {'success': False, 'error': message}, 404
+    user = session.query(User).filter(User.id == logged_in_id).first()
     if not user:
         return {'success': False, 'error': 'User with given id does not exist'}, 404
     try:

@@ -6,7 +6,6 @@ class AuthProtection():
     def __call__(self, environment, start_response):
         request = Request(environment)
         token = request.authorization
-        print(token)
 
 def get_logged_user_id(token):
     try:

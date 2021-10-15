@@ -23,7 +23,7 @@ products_schema = ProductSchema(many=True)
 
 
 def populate_images(value):
-    result = { 'success': True }
+    result = {'success': True}
     if isinstance(value, list):
         result['products'] = products_schema.dump(value)
         for i in range(len(value)):
@@ -56,7 +56,6 @@ def edit_particular_product(product_id):
         price = request.json.get('price')
         description = request.json.get('description')
         created_on = request.json.get('created_on')
-        print(category, title, price, description)
         if category:
             particular_product.category = category
         if title:
@@ -70,7 +69,8 @@ def edit_particular_product(product_id):
         session.commit()
         return populate_images(particular_product), 201
     except Exception as e:
-        return {'success': False, 'error': 'Encountered error while editing particular product'}, 404
+        session.rollback()
+        return {'success': False, 'error': str(e)}, 404
 
 
 @product.route('/<int:product_id>', methods=['DELETE'])
@@ -88,9 +88,9 @@ def delete_particular_product(product_id):
             return {'success': False, 'error': 'You are not authorized to delete this product'}, 404
         session.delete(particular_product)
         session.commit()
-        return { 'success': True }, 201
+        return {'success': True}, 201
     except Exception as e:
-        return {'success': False, 'error': 'Encountered error while deleting particular product'}, 404
+        return {'success': False, 'error': str(e)}, 404
 
 
 @product.route('/<int:product_id>', methods=['GET'])
@@ -106,7 +106,7 @@ def get_particular_product(product_id):
             return {'success': False, 'error': 'Product does not exist'}, 404
         return populate_images(particular_product), 200
     except Exception as e:
-        return {'success': False, 'error': 'Encountered error while fetching particular product'}, 404
+        return {'success': False, 'error': str(e)}, 404
 
 
 @product.route('', methods=['GET'])
@@ -123,12 +123,12 @@ def get_all_products():
         result = populate_images(products)
         return result, 200
     except Exception as e:
-        return {'success': False, 'error': 'Encountered error while creating new product'}, 404
+        return {'success': False, 'error': str(e)}, 404
 
 
 @product.route('', methods=['PUT'])
 def create_new_product():
-    category = request.json.get('category')
+    category = str(request.json.get('category')).lower()
     title = request.json.get('title')
     price = request.json.get('price')
     description = request.json.get('description')
@@ -148,5 +148,5 @@ def create_new_product():
             session.add(new_product_image)
         session.commit()
     except Exception as e:
-        return {'success': False, 'error': 'Encountered error while creating new product'}, 404
+        return {'success': False, 'error': str(e)}, 404
     return {'success': True}, 201

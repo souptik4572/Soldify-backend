@@ -1,13 +1,24 @@
-from sqlalchemy import Column, Integer, String, Date, ForeignKey
+from sqlalchemy import Column, Integer, String, Date, Enum, ForeignKey
 from sqlalchemy.orm import relationship, backref
 from . import Base
 from datetime import date
 
 
+class Category(Enum):
+    books = 'books'
+    electronics = 'electronics'
+    sports = 'sports'
+    clothing = 'clothing'
+    furniture = 'furniture'
+    cars = 'cars'
+    other = 'other'
+
+
 class Product(Base):
     __tablename__ = 'products'
     id = Column(Integer, primary_key=True)
-    category = Column(String(20), nullable=False)
+    category = Column(Enum('books', 'electronics', 'sports', 'clothing',
+                      'furniture', 'cars', 'other', name='Category'), nullable=False, default='other')
     title = Column(String(150), nullable=False)
     price = Column(Integer, nullable=False)
     description = Column(String(500), nullable=False)
