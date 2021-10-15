@@ -10,6 +10,7 @@ def create_app():
     Base.metadata.create_all(engine)
 
     app.register_blueprint(authentication, url_prefix='/auth')
+
     app.register_blueprint(interested, url_prefix='/product/<int:product_id>/interested')
     app.register_blueprint(product, url_prefix='/product')
     return app

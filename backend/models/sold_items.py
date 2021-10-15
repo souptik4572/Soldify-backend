@@ -1,6 +1,6 @@
-from sqlalchemy import Column, Integer, Date, ForeignKey
+from sqlalchemy import Column, Integer, Date, Boolean, ForeignKey
 from sqlalchemy.orm import relationship, backref
-from models import Base
+from . import Base
 from datetime import date
 
 
@@ -8,6 +8,7 @@ class SoldItem(Base):
     __tablename__ = 'sold_items'
     id = Column(Integer, primary_key=True)
     sold_date = Column(Date, default=date.today())
+    is_sold = Column(Boolean, default=False)
 
     # Creating foreign key to users table
     buyer_id = Column(Integer, ForeignKey('users.id'), nullable=False)

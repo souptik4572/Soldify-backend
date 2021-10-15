@@ -29,6 +29,39 @@ def are_all_args_present(*args):
             return False
     return True
 
+@authentication.route('/<int:user_id>', methods=['PATCH'])
+def edit_user_date(user_id):
+    name = request.json.get('name')
+    email = request.json.get('email')
+    phone = request.json.get('phone')
+
+    user = session.query(User).filter(User.id == user_id).first()
+    if not user:
+        return {'success': False, 'error': 'User with given id does not exist'}, 404
+    if name:
+        user.name = name
+    if email:
+        user.email = email
+    if phone:
+        user.phone = phone
+    try:
+        session.commit()
+        return {'success': True, 'user': user_schema.dump(user)}, 201
+    except:
+        return {'success': False, 'error': "New user not created"}, 404
+
+@authentication.route('/<int:user_id>', methods=['DELETE'])
+def delete_existing_user(user_id):
+    user = session.query(User).filter(User.id == user_id).first()
+    if not user:
+        return {'success': False, 'error': 'User with given id does not exist'}, 404
+    try:
+        session.delete(user)
+        session.commit()
+        return {'success': True, 'user': user_schema.dump(user)}, 201
+    except:
+        return {'success': False, 'error': "New user not created"}, 404
+    
 
 @authentication.route('/login', methods=['POST'])
 def login_user():

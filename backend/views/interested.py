@@ -11,7 +11,6 @@ session = Session()
 interested = Blueprint('interested', __name__)
 ma = Marshmallow(interested)
 
-
 class UserSchema(ma.Schema):
     class Meta:
         fields = ('name', 'email', 'phone')
