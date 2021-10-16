@@ -3,6 +3,7 @@ from ..models import Session
 from ..models.user import User
 from ..models.product import Product
 from ..models.product_image import ProductImage
+from ..models.sold_items import SoldItem
 from flask_marshmallow import Marshmallow
 from ..middleware import get_logged_user_id
 from ..utils.check_args import are_all_args_present
@@ -15,7 +16,8 @@ ma = Marshmallow(product)
 
 class ProductSchema(ma.Schema):
     class Meta:
-        fields = ('category', 'title', 'price', 'description', 'created_on')
+        fields = ('id', 'category', 'title', 'price',
+                  'description', 'created_on')
 
 
 product_schema = ProductSchema()
@@ -37,10 +39,14 @@ def populate_images(value):
         result['product']['images'].append(image.link)
     return result
 
+
 def update_product_images(product_id, images, particular_product):
-    particular_product_images = session.query(ProductImage).filter(ProductImage.product_id == product_id).all()
-    existing_images = set([image.link for image in particular_product_images if image.link in images])
-    deleted_images = set([image for image in particular_product_images if image.link not in images])
+    particular_product_images = session.query(ProductImage).filter(
+        ProductImage.product_id == product_id).all()
+    existing_images = set(
+        [image.link for image in particular_product_images if image.link in images])
+    deleted_images = set(
+        [image for image in particular_product_images if image.link not in images])
     new_images = set(images) - existing_images
     for new_image in new_images:
         new_product_image = ProductImage(new_image, particular_product)
@@ -62,12 +68,12 @@ def edit_particular_product(product_id):
             return {'success': False, 'error': 'Product does not exist'}, 404
         if logged_in_id != particular_product.user_id:
             return {'success': False, 'error': 'You are not authorized to edit this product'}, 404
-        category = request.json.get('category')
-        title = request.json.get('title')
-        price = request.json.get('price')
-        description = request.json.get('description')
-        created_on = request.json.get('created_on')
-        images = request.json.get('images')
+        category = request.json.get('category', None)
+        title = request.json.get('title', None)
+        price = request.json.get('price', None)
+        description = request.json.get('description', None)
+        created_on = request.json.get('created_on', None)
+        images = request.json.get('images', None)
         if category:
             particular_product.category = category
         if title:
@@ -123,15 +129,29 @@ def get_particular_product(product_id):
         return {'success': False, 'error': str(e)}, 404
 
 
-@product.route('', methods=['GET'])
-def get_all_products():
+@product.route('/own', methods=['GET'])
+def get_own_products():
     logged_in_id, message = get_logged_user_id(
         request.headers.get('Authorization'))
     if not logged_in_id:
         return {'success': False, 'error': message}, 404
     try:
         products = session.query(Product).filter(
-            Product.user_id == logged_in_id).all()
+            Product.user_id == logged_in_id).join(SoldItem).filter(SoldItem.is_sold == False).all()
+        if not products:
+            return {'success': False, 'error': 'Products does not exist'}, 404
+        result = populate_images(products)
+        return result, 200
+    except Exception as e:
+        return {'success': False, 'error': str(e)}, 404
+
+
+@product.route('/all', methods=['GET'])
+def get_all_products():
+    try:
+        products = session.query(Product).join(SoldItem).filter(
+            not SoldItem.is_sold).all()
+        print(products[0].sold_item)
         if not products:
             return {'success': False, 'error': 'Products does not exist'}, 404
         result = populate_images(products)
@@ -142,11 +162,14 @@ def get_all_products():
 
 @product.route('', methods=['PUT'])
 def create_new_product():
-    category = str(request.json.get('category')).lower()
-    title = request.json.get('title')
-    price = request.json.get('price')
-    description = request.json.get('description')
-    images = set(request.json.get('images'))
+    category = request.json.get('category', None)
+    title = request.json.get('title', None)
+    price = request.json.get('price', None)
+    description = request.json.get('description', None)
+    images = request.json.get('images', None)
+    if not images:
+        return {'success': False, 'error': 'Please provide all the arguments'}, 404
+    images = set(images)
     if not are_all_args_present(category, title, price, description, images):
         return {'success': False, 'error': 'Please provide all the arguments'}, 404
     logged_in_id, message = get_logged_user_id(

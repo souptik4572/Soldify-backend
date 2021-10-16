@@ -13,7 +13,7 @@ ma = Marshmallow(interested)
 
 class UserSchema(ma.Schema):
     class Meta:
-        fields = ('name', 'email', 'phone')
+        fields = ('id', 'name', 'email', 'phone')
 
 
 user_schema = UserSchema()

@@ -30,9 +30,9 @@ def edit_user_date():
         request.headers.get('Authorization'))
     if not logged_in_id:
         return {'success': False, 'error': message}, 404
-    name = request.json.get('name')
-    email = request.json.get('email')
-    phone = request.json.get('phone')
+    name = request.json.get('name', None)
+    email = request.json.get('email', None)
+    phone = request.json.get('phone', None)
     try:
         user = session.query(User).filter(User.id == logged_in_id).first()
         if not user:
@@ -68,8 +68,8 @@ def delete_existing_user():
 
 @authentication.route('/login', methods=['POST'])
 def login_user():
-    email = request.json.get('email')
-    password = request.json.get('password')
+    email = request.json.get('email', None)
+    password = request.json.get('password', None)
 
     if not are_all_args_present(email, password):
         return {'success': False, 'error': 'Please provide all the arguments'}, 404
@@ -89,10 +89,10 @@ def login_user():
 
 @authentication.route('/register', methods=['PUT'])
 def create_new_user():
-    name = request.json.get('name')
-    email = request.json.get('email')
-    phone = request.json.get('phone')
-    password = request.json.get('password')
+    name = request.json.get('name', None)
+    email = request.json.get('email', None)
+    phone = request.json.get('phone', None)
+    password = request.json.get('password', None)
 
     if not are_all_args_present(name, email, phone, password):
         return {'success': False, 'error': 'Please provide all the arguments'}, 404

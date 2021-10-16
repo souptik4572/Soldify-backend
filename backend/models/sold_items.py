@@ -18,7 +18,7 @@ class SoldItem(Base):
     # Creating foreign key to products table
     product_id = Column(Integer, ForeignKey('products.id'), nullable=False)
     product = relationship('Product', backref=backref(
-        'sold_item', cascade="all, delete-orphan"))
+        'sold_item', uselist=False, cascade="all, delete-orphan"))
 
     def __init__(self, product, buyer):
         self.product = product
