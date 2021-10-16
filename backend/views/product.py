@@ -137,7 +137,7 @@ def get_own_products():
         return {'success': False, 'error': message}, 404
     try:
         products = session.query(Product).filter(
-            Product.user_id == logged_in_id).join(SoldItem).filter(SoldItem.is_sold == False).all()
+            Product.user_id == logged_in_id).all()
         if not products:
             return {'success': False, 'error': 'Products does not exist'}, 404
         result = populate_images(products)
@@ -149,8 +149,7 @@ def get_own_products():
 @product.route('/all', methods=['GET'])
 def get_all_products():
     try:
-        products = session.query(Product).join(SoldItem).filter(
-            not SoldItem.is_sold).all()
+        products = session.query(Product).all()
         print(products[0].sold_item)
         if not products:
             return {'success': False, 'error': 'Products does not exist'}, 404
