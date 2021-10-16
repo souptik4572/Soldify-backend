@@ -4,16 +4,6 @@ from . import Base
 from datetime import date
 
 
-class Category(Enum):
-    books = 'books'
-    electronics = 'electronics'
-    sports = 'sports'
-    clothing = 'clothing'
-    furniture = 'furniture'
-    cars = 'cars'
-    other = 'other'
-
-
 class Product(Base):
     __tablename__ = 'products'
     id = Column(Integer, primary_key=True)
