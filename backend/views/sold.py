@@ -47,12 +47,14 @@ def final_sold_product(product_id):
         return {'success': False, 'error': message}, 404
     sold_item = session.query(SoldItem).filter(
         SoldItem.product_id == product_id).first()
+    interested_buyer = session.query(InterestedBuyer).join(InterestedBuyer.product_id == product_id)
     if not sold_item:
         return {'success': False, 'error': 'Product with given id has not been assigned to anyone for selling'}, 404
     if sold_item.is_sold:
         return {'success': False, 'error': 'Product with given id, has already been sold'}, 404
     try:
         sold_item.is_sold = True
+        session.delete(interested_buyer)
         session.commit()
         return {'success': True}, 201
     except Exception as e:
