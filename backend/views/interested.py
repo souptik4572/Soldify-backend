@@ -10,6 +10,7 @@ from ..models.base import session
 interested = Blueprint('interested', __name__)
 ma = Marshmallow(interested)
 
+
 class UserSchema(ma.Schema):
     class Meta:
         fields = ('id', 'name', 'email', 'phone')
@@ -48,9 +49,10 @@ def add_interested_buyer(product_id):
         return {'success': False, 'error': 'Product with given id does not exist'}, 404
     if product.user_id == logged_in_id:
         return {'success': False, 'error': 'Seller cannot buy their own product'}, 404
-    interested_buyer = session.query(InterestedBuyer).filter(InterestedBuyer.buyer_id == logged_in_id).first()
+    interested_buyer = session.query(InterestedBuyer).filter(
+        InterestedBuyer.buyer_id == logged_in_id and InterestedBuyer.product_id == product_id).first()
     if interested_buyer:
-        return { 'success': False, 'error': 'Logged in user is already an interested buyer of the product' }
+        return {'success': False, 'error': 'Logged in user is already an interested buyer of the product'}
     buyer = session.query(User).filter(User.id == logged_in_id).first()
     if not buyer:
         return {'success': False, 'error': 'Buyer with given id does not exist'}, 404
@@ -60,7 +62,8 @@ def add_interested_buyer(product_id):
         session.commit()
         return {'success': True}, 201
     except Exception as e:
-        return { 'success': False, 'error': str(e) }
+        return {'success': False, 'error': str(e)}
+
 
 @interested.route('/remove', methods=['DELETE'])
 def remove_interested_buyer(product_id):
@@ -68,12 +71,13 @@ def remove_interested_buyer(product_id):
         request.headers.get('Authorization'))
     if not logged_in_id:
         return {'success': False, 'error': message}, 404
-    interested_buyer = session.query(InterestedBuyer).filter(InterestedBuyer.buyer_id == logged_in_id).first()
+    interested_buyer = session.query(InterestedBuyer).filter(
+        InterestedBuyer.buyer_id == logged_in_id).first()
     if not interested_buyer:
-        return { 'success': False, 'error': 'Logged in user is not a buyer for this product' }, 404
+        return {'success': False, 'error': 'Logged in user is not a buyer for this product'}, 404
     try:
         session.delete(interested_buyer)
         session.commit()
-        return { 'success': True }, 201
+        return {'success': True}, 201
     except Exception as e:
-        return { 'success': False, 'error': str(e) }
+        return {'success': False, 'error': str(e)}
