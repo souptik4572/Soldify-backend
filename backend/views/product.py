@@ -22,18 +22,20 @@ product_schema = ProductSchema()
 products_schema = ProductSchema(many=True)
 
 
-def populate_images_and_is_sold(value):
+def populate_images_and_is_sold(value, exclude_sold = False):
     result = {'success': True}
     if isinstance(value, list):
         result['products'] = products_schema.dump(value)
         for i in range(len(value)):
             result['products'][i]['images'] = []
+            for image in value[i].product_image:
+                result['products'][i]['images'].append(image.link)
+            if exclude_sold:
+                break
             if value[i].sold_item:
                 result['products'][i]['is_sold'] = value[i].sold_item.is_sold
             else:
                 result['products'][i]['is_sold'] = False
-            for image in value[i].product_image:
-                result['products'][i]['images'].append(image.link)
         return result
     result['product'] = product_schema.dump(value)
     result['product']['images'] = []
@@ -160,7 +162,7 @@ def get_all_products():
             print(a_product.sold_item)
         if not products:
             return {'success': False, 'error': 'Products does not exist'}, 404
-        result = populate_images_and_is_sold(products)
+        result = populate_images_and_is_sold(products, True)
         return result, 200
     except Exception as e:
         return {'success': False, 'error': str(e)}, 404
