@@ -5,8 +5,7 @@ from ..models.product import Product
 from ..models.interested_buyers import InterestedBuyer
 from flask_marshmallow import Marshmallow
 from ..middleware import get_logged_user_id
-
-session = Session()
+from ..models.base import session
 
 interested = Blueprint('interested', __name__)
 ma = Marshmallow(interested)

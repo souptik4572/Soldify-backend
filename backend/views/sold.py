@@ -7,8 +7,7 @@ from ..models.sold_items import SoldItem
 from flask_marshmallow import Marshmallow
 from ..middleware import get_logged_user_id
 from ..utils.check_args import are_all_args_present
-
-session = Session()
+from ..models.base import session
 
 sold = Blueprint('sold', __name__)
 ma = Marshmallow(sold)

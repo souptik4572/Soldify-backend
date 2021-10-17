@@ -8,8 +8,7 @@ from flask_marshmallow import Marshmallow
 from datetime import datetime, timedelta
 from ..middleware import get_logged_user_id
 from ..utils.check_args import are_all_args_present
-
-session = Session()
+from ..models.base import session
 
 SECRET_KEY = config('ACCESS_SECRET_TOKEN')
 BCRYPT_SALT = int(config('BCRYPT_SALT'))
