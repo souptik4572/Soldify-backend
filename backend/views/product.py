@@ -24,17 +24,25 @@ product_schema = ProductSchema()
 products_schema = ProductSchema(many=True)
 
 
-def populate_images(value):
+def populate_images_and_is_sold(value):
     result = {'success': True}
     if isinstance(value, list):
         result['products'] = products_schema.dump(value)
         for i in range(len(value)):
             result['products'][i]['images'] = []
+            if value[i].sold_item:
+                result['products'][i]['is_sold'] = value[i].sold_item.is_sold
+            else:
+                result['products'][i]['is_sold'] = False
             for image in value[i].product_image:
                 result['products'][i]['images'].append(image.link)
         return result
     result['product'] = product_schema.dump(value)
     result['product']['images'] = []
+    if value.sold_item:
+        result['product']['is_sold'] = value.sold_item.is_sold
+    else:
+        result['product']['is_sold'] = False
     for image in value.product_image:
         result['product']['images'].append(image.link)
     return result
@@ -87,7 +95,7 @@ def edit_particular_product(product_id):
         if images:
             update_product_images(product_id, images, particular_product)
         session.commit()
-        return populate_images(particular_product), 201
+        return populate_images_and_is_sold(particular_product), 201
     except Exception as e:
         session.rollback()
         return {'success': False, 'error': str(e)}, 404
@@ -121,10 +129,10 @@ def get_particular_product(product_id):
         return {'success': False, 'error': message}, 404
     try:
         particular_product = session.query(Product).join(
-            ProductImage).filter(Product.id == product_id).first()
+            ProductImage).outerjoin(SoldItem).filter(Product.id == product_id).first()
         if not particular_product:
             return {'success': False, 'error': 'Product does not exist'}, 404
-        return populate_images(particular_product), 200
+        return populate_images_and_is_sold(particular_product), 200
     except Exception as e:
         return {'success': False, 'error': str(e)}, 404
 
@@ -136,11 +144,11 @@ def get_own_products():
     if not logged_in_id:
         return {'success': False, 'error': message}, 404
     try:
-        products = session.query(Product).filter(
+        products = session.query(Product).outerjoin(SoldItem).filter(
             Product.user_id == logged_in_id).all()
         if not products:
             return {'success': False, 'error': 'Products does not exist'}, 404
-        result = populate_images(products)
+        result = populate_images_and_is_sold(products)
         return result, 200
     except Exception as e:
         return {'success': False, 'error': str(e)}, 404
@@ -149,11 +157,12 @@ def get_own_products():
 @product.route('/all', methods=['GET'])
 def get_all_products():
     try:
-        products = session.query(Product).all()
-        print(products[0].sold_item)
+        products = session.query(Product).outerjoin(SoldItem).all()
+        for a_product in products:
+            print(a_product.sold_item)
         if not products:
             return {'success': False, 'error': 'Products does not exist'}, 404
-        result = populate_images(products)
+        result = populate_images_and_is_sold(products)
         return result, 200
     except Exception as e:
         return {'success': False, 'error': str(e)}, 404
