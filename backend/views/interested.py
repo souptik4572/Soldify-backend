@@ -49,8 +49,8 @@ def add_interested_buyer(product_id):
         return {'success': False, 'error': 'Product with given id does not exist'}, 404
     if product.user_id == logged_in_id:
         return {'success': False, 'error': 'Seller cannot buy their own product'}, 404
-    interested_buyer = session.query(InterestedBuyer).filter(
-        InterestedBuyer.buyer_id == logged_in_id and InterestedBuyer.product_id == product_id).first()
+    interested_buyer = session.query(InterestedBuyer).join(Product).filter(
+        InterestedBuyer.product_id == product_id and InterestedBuyer.buyer_id == logged_in_id).first()
     if interested_buyer:
         return {'success': False, 'error': 'Logged in user is already an interested buyer of the product'}
     buyer = session.query(User).filter(User.id == logged_in_id).first()

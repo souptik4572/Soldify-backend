@@ -47,7 +47,7 @@ def final_sold_product(product_id):
         return {'success': False, 'error': message}, 404
     sold_item = session.query(SoldItem).filter(
         SoldItem.product_id == product_id).first()
-    interested_buyer = session.query(InterestedBuyer).join(InterestedBuyer.product_id == product_id)
+    interested_buyer = session.query(InterestedBuyer).filter(InterestedBuyer.product_id == product_id).first()
     if not sold_item:
         return {'success': False, 'error': 'Product with given id has not been assigned to anyone for selling'}, 404
     if sold_item.is_sold:
