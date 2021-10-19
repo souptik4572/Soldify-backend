@@ -12,6 +12,7 @@ from ..models.base import session
 product = Blueprint('product', __name__)
 ma = Marshmallow(product)
 
+
 class ProductSchema(ma.Schema):
     class Meta:
         fields = ('id', 'category', 'title', 'price',
@@ -22,20 +23,20 @@ product_schema = ProductSchema()
 products_schema = ProductSchema(many=True)
 
 
-def populate_images_and_is_sold(value, exclude_sold = False):
+def populate_images_and_is_sold(value, exclude_sold=False):
     result = {'success': True}
     if isinstance(value, list):
         result['products'] = products_schema.dump(value)
-        for i in range(len(value)):
+        for i in range(len(result['products'])):
             result['products'][i]['images'] = []
             for image in value[i].product_image:
                 result['products'][i]['images'].append(image.link)
-            if exclude_sold:
-                break
             if value[i].sold_item:
                 result['products'][i]['is_sold'] = value[i].sold_item.is_sold
             else:
                 result['products'][i]['is_sold'] = False
+        if exclude_sold:
+            result['products'] = [a_product for a_product in result['products'] if a_product['is_sold']]
         return result
     result['product'] = product_schema.dump(value)
     result['product']['images'] = []
@@ -158,8 +159,6 @@ def get_own_products():
 def get_all_products():
     try:
         products = session.query(Product).outerjoin(SoldItem).all()
-        for a_product in products:
-            print(a_product.sold_item)
         if not products:
             return {'success': False, 'error': 'Products does not exist'}, 404
         result = populate_images_and_is_sold(products, True)

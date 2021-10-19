@@ -33,7 +33,7 @@ def get_all_interested_buyers(product_id):
     if not logged_in_id:
         return {'success': False, 'error': message}, 404
     interested_buyers = session.query(InterestedBuyer).join(Product).join(User).filter(
-        InterestedBuyer.product_id == product_id and Product.user_id == logged_in_id).all()
+        InterestedBuyer.product_id == product_id, Product.user_id == logged_in_id).all()
     return {'success': True, 'buyers': get_buyers_list(interested_buyers)}, 200
 
 

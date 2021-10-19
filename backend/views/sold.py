@@ -34,8 +34,7 @@ def get_all_sold_items(product_id):
     if not logged_in_id:
         return {'success': False, 'error': message}, 404
     sold_products = session.query(SoldItem).join(Product).filter(
-        SoldItem.product_id == product_id and Product.user_id == logged_in_id).all()
-    print(sold_products)
+        SoldItem.product_id == product_id, Product.user_id == logged_in_id).all()
     return { 'success': True, 'sold_products': populate_products(sold_products) }       
     
 
@@ -88,7 +87,6 @@ def add_sold_item(product_id):
         session.commit()
         return {'success': True}, 201
     except Exception as e:
-        print(e)
         return {'success': False, 'error': str(e)}
 
 
