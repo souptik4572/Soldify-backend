@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 from flask_cors import CORS
 
 
@@ -9,7 +9,7 @@ def create_app():
     from .views.interested import interested
     from .views.sold import sold
 
-    app = Flask(__name__)
+    app = Flask(__name__, template_folder='static')
     CORS(app)
     Base.metadata.create_all(engine)
 
@@ -18,4 +18,9 @@ def create_app():
     app.register_blueprint(
         interested, url_prefix='/product/<int:product_id>/interested')
     app.register_blueprint(product, url_prefix='/product')
+
+    @app.route('/')
+    def home():
+        return render_template('index.html')
+
     return app
