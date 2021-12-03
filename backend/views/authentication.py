@@ -1,5 +1,4 @@
 from flask import Blueprint, request
-from ..models import Session
 from ..models.user import User
 from decouple import config
 import jwt
